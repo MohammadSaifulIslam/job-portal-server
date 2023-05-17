@@ -27,11 +27,18 @@ async function run() {
     await client.connect();
     const jobCollection = client.db("jobPortalDB").collection("jobs");
 
+    // Creating index on two fields
+    const indexKeys = { title: 1, category: 1 };
+
+    const indexOptions = { name: "titleCategory" };
+    const result = await jobCollection.createIndex(indexKeys, indexOptions);
+    console.log(result);
+
     app.get("/allJobs/:status", async (req, res) => {
       const status = req.params.status;
 
       if (status == "Onsite" || status == "Remote") {
-        const query = { status: status}
+        const query = { status: status };
         const result = await jobCollection.find(query).toArray();
         return res.send(result);
       }
@@ -40,19 +47,34 @@ async function run() {
       res.send(result);
     });
 
-    app.get('/job_details/:id', async(req, res)=>{
+    app.get("/job_details/:id", async (req, res) => {
       const id = req.params.id;
-  
-      const query = { _id : new ObjectId(id)}
+
+      const query = { _id: new ObjectId(id) };
       const result = await jobCollection.findOne(query);
       res.send(result);
-    })
+    });
 
     app.post("/postJob", async (req, res) => {
       const jobDetails = req.body;
       console.log(jobDetails);
 
       const result = await jobCollection.insertOne(jobDetails);
+      res.send(result);
+    });
+
+    // get jobs by search
+    app.get("/getJobsBySearch/:text", async (req, res) => {
+      const text = req.params.text;
+      console.log("hit the api")
+      const result = await jobCollection
+        .find({
+          $or: [
+            { title: { $regex: text, $options: "i" } },
+            { category: { $regex: text, $options: "i" } },
+          ],
+        })
+        .toArray();
       res.send(result);
     });
 
