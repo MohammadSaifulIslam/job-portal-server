@@ -29,7 +29,6 @@ async function run() {
 
     // Creating index on two fields
     const indexKeys = { title: 1, category: 1 };
-
     const indexOptions = { name: "titleCategory" };
     const result = await jobCollection.createIndex(indexKeys, indexOptions);
     console.log(result);
@@ -75,6 +74,23 @@ async function run() {
           ],
         })
         .toArray();
+      res.send(result);
+    });
+
+
+    // pagination
+    app.get('/totalJobs', async(req, res)=>{
+      const result = await jobCollection.estimatedDocumentCount();
+      res.send({totalJobs : result})
+    });
+
+    // pagination data send 
+    app.get("/jobs", async (req, res) => {
+      const page = parseInt(req.query.page) || 1;
+      const limit =  4;
+      const skip = (page - 1) * limit;
+
+      const result = await jobCollection.find().skip(skip).limit(limit).toArray();
       res.send(result);
     });
 
